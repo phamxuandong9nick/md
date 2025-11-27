@@ -56,6 +56,13 @@
         
         <div class="flex gap-3 items-center">
             <button onclick="resetStorage()" class="text-xs text-gray-400 hover:text-white underline px-2">Reset</button>
+
+            <!-- Nút Copy Markdown Mới -->
+            <button onclick="copyMarkdownRaw()" class="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-2 rounded text-sm font-medium transition-colors border border-gray-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span>Copy MD</span>
+            </button>
+
             <input type="file" id="imageInput" multiple accept="image/*" class="hidden">
             <button onclick="document.getElementById('imageInput').click()" class="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-2 rounded text-sm font-medium transition-colors border border-gray-600">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -283,6 +290,33 @@ Hết trang.
                 editorElement.value = defaultText;
                 render();
             }
+        }
+        
+        // HÀM COPY RAW MARKDOWN MỚI
+        function copyMarkdownRaw() {
+            const content = document.getElementById('editor').value;
+            if (!content) { showToast('Không có nội dung!'); return; }
+            
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(content)
+                    .then(() => showToast('Đã copy nội dung Markdown!'))
+                    .catch(() => fallbackCopyRaw(content));
+            } else {
+                fallbackCopyRaw(content);
+            }
+        }
+        
+        function fallbackCopyRaw(text) {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                const s = document.execCommand('copy');
+                if(s) showToast('Đã copy Markdown (Fallback)!');
+                else showToast('Lỗi copy!');
+            } catch(e) { showToast('Lỗi copy!'); }
+            document.body.removeChild(ta);
         }
 
         imageInput.addEventListener('change', async (e) => {
