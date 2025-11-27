@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Markdown Editor Pro (V3 - Fix Export)</title>
+    <title>Markdown Editor Of Nick</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Marked.js 12.0.2 (Stable) -->
+    <!-- Marked.js 12.0.2 -->
     <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
     <!-- DOMPurify -->
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+    <!-- Html2Pdf.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style id="content-styles">
         /* --- Styles --- */
@@ -28,66 +30,77 @@
         .markdown-body blockquote { padding: 0 1em; color: #57606a; border-left: 0.25em solid #d0d7de; margin-bottom: 16px; }
         
         .markdown-body code { padding: 0.2em 0.4em; margin: 0; font-size: 85%; background-color: rgba(175, 184, 193, 0.2); border-radius: 6px; font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace; }
-        .code-container { position: relative; margin-bottom: 16px; background-color: #f6f8fa; border-radius: 6px; border: 1px solid #d0d7de; }
+        .code-container { position: relative; margin-bottom: 16px; background-color: #f6f8fa; border-radius: 6px; border: 1px solid #d0d7de; page-break-inside: avoid; }
         .code-container pre { padding: 16px; overflow: auto; margin: 0; border-radius: 6px; padding-top: 40px; }
         .code-container pre code { background-color: transparent; padding: 0; white-space: pre; }
 
         .copy-btn { position: absolute; top: 5px; right: 5px; padding: 4px 10px; font-size: 12px; color: #24292f; background-color: #f3f4f6; border: 1px solid #d0d7de; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 600; user-select: none; z-index: 10; box-shadow: 0 1px 2px rgba(0,0,0,0.05); line-height: 1; }
         .copy-btn:hover { background-color: #fff; color: #0969da; border-color: #0969da; }
-        .copy-btn:active { transform: translateY(1px); }
 
-        .markdown-body img { max-width: 100%; box-sizing: border-box; background-color: #fff; border: 1px solid #d0d7de; border-radius: 6px; }
+        .markdown-body img { max-width: 100%; box-sizing: border-box; background-color: #fff; border: 1px solid #d0d7de; border-radius: 6px; page-break-inside: avoid; }
         .markdown-body table { border-spacing: 0; border-collapse: collapse; margin-bottom: 16px; width: 100%; }
         .markdown-body table th, .markdown-body table td { padding: 6px 13px; border: 1px solid #d0d7de; }
         .markdown-body table tr:nth-child(2n) { background-color: #f6f8fa; }
 
-        #back-to-top { position: fixed; bottom: 30px; right: 30px; background-color: #2563eb; color: white; width: 50px; height: 50px; border-radius: 50%; display: none; justify-content: center; align-items: center; cursor: pointer; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.2); z-index: 9999; transition: opacity 0.3s, transform 0.2s; }
-        #back-to-top:hover { background-color: #1d4ed8; transform: scale(1.1); }
+        #back-to-top { position: fixed; bottom: 30px; right: 30px; background-color: #2563eb; color: white; width: 50px; height: 50px; border-radius: 50%; display: none; justify-content: center; align-items: center; cursor: pointer; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.2); z-index: 9999; }
     </style>
 </head>
 <body class="bg-gray-100 h-screen flex flex-col overflow-hidden">
 
     <!-- Header -->
-    <header class="bg-gray-900 text-white h-16 flex justify-between items-center px-6 shadow-md shrink-0 z-10 gap-4">
+    <header class="bg-gray-900 text-white h-16 flex justify-between items-center px-4 shadow-md shrink-0 z-10 gap-2">
         <div class="flex items-center gap-2 min-w-fit">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
-            <span class="font-bold text-lg tracking-wide hidden sm:inline">MD Pro V3</span>
+            <span class="font-bold text-lg tracking-wide hidden md:inline">MD Pro V7</span>
         </div>
         
-        <div class="flex gap-3 items-center">
-            <button onclick="resetStorage()" class="text-xs text-gray-400 hover:text-white underline px-2">Reset</button>
+        <div class="flex gap-2 items-center overflow-x-auto">
+            <button onclick="resetStorage()" class="text-xs text-gray-400 hover:text-white underline px-1 whitespace-nowrap">Reset</button>
 
-            <!-- Nút Copy Markdown Mới -->
-            <button onclick="copyMarkdownRaw()" class="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-2 rounded text-sm font-medium transition-colors border border-gray-600">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                <span>Copy MD</span>
+            <!-- Nút Copy MD -->
+            <button onclick="copyMarkdownRaw()" title="Copy nội dung Markdown" class="p-2 bg-gray-700 hover:bg-gray-600 rounded border border-gray-600">
+                <span class="text-xs font-bold">MD</span>
             </button>
 
+            <!-- Nạp ảnh -->
             <input type="file" id="imageInput" multiple accept="image/*" class="hidden">
-            <button onclick="document.getElementById('imageInput').click()" class="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-2 rounded text-sm font-medium transition-colors border border-gray-600">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                <span id="img-btn-text">1. Nạp ảnh</span>
+            <button onclick="document.getElementById('imageInput').click()" title="Nạp ảnh local" class="flex items-center gap-1 bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-1.5 rounded text-sm font-medium border border-gray-600 whitespace-nowrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <span id="img-btn-text">Ảnh</span>
             </button>
-            <button onclick="exportFullHtml()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded text-sm font-medium transition-colors shadow-lg shadow-blue-900/50">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                <span>2. Xuất HTML</span>
+
+            <!-- Divider -->
+            <div class="w-px h-6 bg-gray-600 mx-1"></div>
+
+            <!-- Copy HTML Clipboard -->
+            <button onclick="copyHtmlToClipboard()" title="Copy HTML vào Clipboard" class="flex items-center gap-1 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-sm font-medium whitespace-nowrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span>Copy HTML</span>
+            </button>
+
+            <!-- Download HTML -->
+            <button onclick="downloadHtmlFile()" title="Tải file .html" class="flex items-center gap-1 bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded text-sm font-medium whitespace-nowrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>.html</span>
+            </button>
+
+            <!-- Download PDF -->
+            <button onclick="downloadPdfFile()" title="Tải file .pdf" class="flex items-center gap-1 bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded text-sm font-medium whitespace-nowrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>
+                <span>.pdf</span>
             </button>
         </div>
     </header>
 
     <main class="flex-1 flex flex-row overflow-hidden">
-        <div class="w-1/2 flex flex-col border-r border-gray-300 relative group">
-            <div class="bg-gray-100 px-4 py-2 text-xs text-gray-500 font-bold uppercase border-b border-gray-300 flex justify-between">
+        <div class="w-1/2 flex flex-col border-r border-gray-300">
+            <div class="bg-gray-100 px-4 py-2 text-xs font-bold uppercase border-b border-gray-300 flex justify-between">
                 <span>Markdown Input</span>
                 <span id="save-status" class="text-green-600 font-normal hidden">Đã lưu</span>
             </div>
             <textarea id="editor" class="flex-1 w-full p-6 resize-none outline-none font-mono text-gray-800 text-sm leading-relaxed bg-gray-50 focus:bg-white transition-colors" spellcheck="false"></textarea>
         </div>
         <div class="w-1/2 flex flex-col bg-white">
-            <div class="bg-gray-100 px-4 py-2 text-xs text-gray-500 font-bold uppercase border-b border-gray-300 flex justify-between">
-                <span>Preview</span>
-                <span id="status-text" class="normal-case font-normal text-blue-600"></span>
-            </div>
+            <div class="bg-gray-100 px-4 py-2 text-xs font-bold uppercase border-b border-gray-300">Preview</div>
             <div id="preview" class="flex-1 w-full p-0 overflow-y-auto"><div class="markdown-body h-full"></div></div>
         </div>
     </main>
@@ -97,311 +110,355 @@
         <span id="toast-message">Thông báo</span>
     </div>
 
+    <!-- Script Injection cho file xuất -->
     <script>
-        const STORAGE_KEY = 'md_editor_v3_store'; 
-        // Đây là nội dung mẫu đầy đủ tính năng:
-        const defaultText = `# Hướng Dẫn Sử Dụng Đầy Đủ
+        const injectionScript = `
+        <script>
+            function handleCopy(t,b){if(navigator.clipboard){navigator.clipboard.writeText(t).then(()=>eff(b)).catch(()=>fb(t,b))}else fb(t,b)}
+            function fb(t,b){var a=document.createElement("textarea");a.value=t;a.style.position="fixed";a.style.left="0";a.style.opacity="0";document.body.appendChild(a);a.focus();a.select();try{if(document.execCommand('copy'))eff(b);else alert('Lỗi copy')}catch(e){}document.body.removeChild(a)}
+            function eff(b){var o=b.innerHTML;b.innerHTML='✅';b.style.color='#16a34a';setTimeout(()=>{b.innerHTML=o;b.style.color=''},2000)}
+            window.callCopy=function(b){var p=b.parentElement.querySelector('pre');if(p)handleCopy(p.innerText,b)};
+            document.addEventListener('DOMContentLoaded',()=>{const b=document.getElementById('back-to-top');if(b)window.onscroll=()=>{b.style.display=(document.body.scrollTop>300||document.documentElement.scrollTop>300)?'flex':'none'}});
+        <\/script>`;
+    </script>
 
-Chào mừng bạn đến với **Markdown Editor Pro**. Dưới đây là demo tất cả các tính năng.
+    <script>
+        const STORAGE_KEY = 'md_editor_v7_full_store';
+        const defaultText = `# Hướng Dẫn & Mẫu Markdown Toàn Diện
 
-## Mục Lục (Tự động tạo ID)
-Bạn có thể click vào các link dưới đây để nhảy đến từng phần (nhờ tính năng tự động tạo ID cho thẻ Heading):
-- [1. Định dạng văn bản](#1-dinh-dang-van-ban)
-- [2. Chèn Code & Nút Copy](#2-chen-code-nut-copy)
-- [3. Bảng biểu (Table)](#3-bang-bieu-table)
-- [4. Hình ảnh (Embed Image)](#4-hinh-anh-embed-image)
-- [5. Các tính năng khác](#5-cac-tinh-nang-khac)
+Chào mừng! Đây là file mẫu dùng để kiểm tra khả năng hiển thị của trình soạn thảo.
+Dưới đây là mục lục (Bạn có thể click để nhảy đến từng phần nhờ tính năng tự tạo ID):
+
+**Mục Lục:**
+1. [Định dạng văn bản](#1-dinh-dang-van-ban)
+2. [Danh sách (Lists)](#2-danh-sach-lists)
+3. [Liên kết & Hình ảnh](#3-lien-ket-hinh-anh)
+4. [Mã nguồn (Code Blocks)](#4-ma-nguon-code-blocks)
+5. [Bảng biểu (Tables)](#5-bang-bieu-tables)
+6. [Trích dẫn (Blockquotes)](#6-trich-dan-blockquotes)
+7. [Các thành phần khác](#7-cac-thanh-phan-khac)
 
 ---
 
 ## 1. Định dạng văn bản
-Markdown hỗ trợ nhiều kiểu định dạng:
-- **In đậm (Bold)** và *In nghiêng (Italic)*.
-- ~~Gạch ngang (Strikethrough)~~.
-- [Link đến Google](https://google.com).
-- Danh sách việc cần làm:
-  - [x] Soạn thảo Markdown.
-  - [ ] Xuất file HTML.
 
-> "Đây là một trích dẫn (Blockquote). Rất hữu ích để làm nổi bật thông tin."
+Bạn có thể định dạng văn bản theo nhiều kiểu khác nhau:
+
+- **In đậm (Bold)**: Dùng hai dấu sao \`**text**\` hoặc gạch dưới \`__text__\`.
+- *In nghiêng (Italic)*: Dùng một dấu sao \`*text*\` hoặc gạch dưới \`_text_\`.
+- ***Vừa đậm vừa nghiêng***: Dùng ba dấu sao \`***text***\`.
+- ~~Gạch ngang (Strikethrough)~~: Dùng hai dấu ngã \`~~text~~\`.
+- \`Code trong dòng\`: Dùng dấu huyền (backtick) \` \`text\` \`.
 
 ---
 
-## 2. Chèn Code & Nút Copy
-Hỗ trợ tô màu cú pháp (Syntax highlighting) và **nút Copy** hoạt động ngay cả trong file xuất ra.
+## 2. Danh sách (Lists)
 
-**Ví dụ JavaScript:**
+### Danh sách không thứ tự
+- Phần tử 1
+- Phần tử 2
+  - Phần tử con 2.1
+  - Phần tử con 2.2
+    - Phần tử cháu 2.2.1
+
+### Danh sách có thứ tự
+1. Bước thứ nhất
+2. Bước thứ hai
+3. Bước thứ ba
+
+### Danh sách công việc (Task Lists)
+- [x] Đã hoàn thành công việc A
+- [ ] Đang làm công việc B
+- [ ] Chưa bắt đầu công việc C
+
+---
+
+## 3. Liên kết & Hình ảnh
+
+### Liên kết (Links)
+- [Truy cập Google](https://www.google.com)
+- [Link có title (rê chuột vào để xem)](https://www.google.com "Trang chủ Google")
+- Địa chỉ email: <admin@example.com>
+
+### Hình ảnh (Images)
+Cú pháp: \`![Văn bản thay thế](đường-dẫn-ảnh)\`
+
+**Ảnh từ Internet:**
+![Logo Google](https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png)
+
+**Ảnh từ máy tính (Local):**
+*(Lưu ý: Với trình soạn thảo này, hãy đặt ảnh cùng thư mục hoặc dùng nút "Nạp ảnh" để xem)*
+![Ảnh mẫu local](demo.png)
+
+---
+
+## 4. Mã nguồn (Code Blocks)
+
+Đây là tính năng quan trọng để kiểm tra **nút Copy**.
+
+**JavaScript:**
 \`\`\`javascript
-function sayHello(name) {
-    console.log(\`Xin chào \${name}!\`);
-    return true;
+// Hàm tính tổng
+function sum(a, b) {
+    console.log("Đang tính toán...");
+    return a + b;
+}
+
+const result = sum(10, 20);
+alert(\`Kết quả là: \${result}\`);
+\`\`\`
+
+**Python:**
+\`\`\`python
+def hello_world():
+    print("Xin chào, đây là Python!")
+
+if __name__ == "__main__":
+    hello_world()
+\`\`\`
+
+**HTML/XML:**
+\`\`\`html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Code</title>
+</head>
+<body>
+    <h1>Hello World</h1>
+</body>
+</html>
+\`\`\`
+
+**JSON:**
+\`\`\`json
+{
+  "name": "Markdown Editor",
+  "version": "4.0",
+  "features": ["HTML Export", "PDF Export"]
 }
 \`\`\`
 
-**Ví dụ HTML:**
-\`\`\`html
-<div class="container">
-    <p>Đây là đoạn code mẫu.</p>
+---
+
+## 5. Bảng biểu (Tables)
+
+Sử dụng dấu hai chấm \`:\` để căn lề.
+
+| Tính năng | Trạng thái (Căn giữa) | Ghi chú (Căn phải) |
+| :--- | :---: | ---: |
+| Soạn thảo | ✅ Hoàn tất | Real-time |
+| Xuất PDF | ✅ Hoàn tất | Khổ A4 |
+| Xuất HTML | ✅ Hoàn tất | Kèm CSS |
+| Dark Mode | ❌ Chưa có | Sắp ra mắt |
+
+---
+
+## 6. Trích dẫn (Blockquotes)
+
+> Đây là một đoạn trích dẫn đơn giản.
+> Markdown rất tuyệt vời.
+
+Trích dẫn lồng nhau:
+> Cấp 1
+>> Cấp 2
+>>> Cấp 3: "Kiến thức là sức mạnh."
+
+---
+
+## 7. Các thành phần khác
+
+### Đường kẻ ngang (Horizontal Rule)
+Dùng để ngắt trang hoặc chia đoạn:
+
+---
+
+### HTML thuần (Raw HTML)
+Bạn có thể viết HTML trực tiếp nếu cần:
+
+<div style="padding: 10px; background-color: #f0fdf4; border: 1px solid #22c55e; border-radius: 5px; color: #15803d;">
+    <strong>Thông báo:</strong> Đây là một thẻ div được viết bằng HTML thuần bên trong Markdown!
 </div>
-\`\`\`
+
+<br>
+
+### Ký tự đặc biệt
+Nếu muốn viết dấu sao mà không bị in đậm, hãy dùng dấu gạch chéo ngược:
+\\*Dòng này không bị in nghiêng\\*
 
 ---
-
-## 3. Bảng biểu (Table)
-Tạo bảng dễ dàng với cú pháp Markdown:
-
-| Tính năng | Trạng thái | Ghi chú |
-| :--- | :---: | :--- |
-| **Soạn thảo** | ✅ | Real-time preview |
-| **Nút Copy** | ✅ | Hoạt động offline |
-| **Xuất HTML** | ✅ | Kèm CSS đẹp mắt |
-| **Auto-save** | ✅ | Lưu vào trình duyệt |
-
----
-
-## 4. Hình ảnh (Embed Image)
-Để chèn ảnh từ máy tính và gửi cho người khác xem được:
-1. Đặt file ảnh cùng thư mục (ví dụ: \`demo.png\`).
-2. Viết markdown: \`![Mô tả ảnh](demo.png)\`.
-3. Bấm nút **"1. Nạp ảnh"** trên thanh công cụ và chọn file \`demo.png\`.
-4. Khi xuất file HTML, ảnh sẽ được nhúng thẳng vào file (không cần gửi kèm file ảnh rời).
-
----
-
-## 5. Các tính năng khác
-### 5.1. Nút "Back to Top"
-Hãy thử cuộn xuống cuối trang này trong phần Preview hoặc file xuất ra. Bạn sẽ thấy một nút mũi tên màu xanh ở góc dưới bên phải để quay lại đầu trang.
-
-### 5.2. Tự động lưu (Auto-save)
-Nội dung bạn gõ sẽ được lưu vào trình duyệt. Thử tắt tab và mở lại, nội dung vẫn còn đó.
-
-### 5.3. Xuất file HTML trọn gói
-Bấm nút **"2. Xuất HTML"** để copy toàn bộ mã nguồn. File kết quả là một trang web độc lập, có thể gửi qua email hoặc chat mà không bị lỗi hiển thị.
-
-<br><br><br><br><br><br><br>
-*(Khoảng trắng này để demo nút cuộn trang)*
-<br><br><br><br><br><br><br>
-Hết trang.
+*Kết thúc tài liệu mẫu.*
 `;
 
-        const editorElement = document.getElementById('editor'); // Dùng tên biến rõ ràng
+        const editor = document.getElementById('editor');
         const previewContainer = document.querySelector('#preview .markdown-body');
-        const toast = document.getElementById('toast');
-        const imageInput = document.getElementById('imageInput');
-        const saveStatus = document.getElementById('save-status');
         const embeddedImages = new Map();
-
-        // Cấu hình Marked
-        function slugify(text) {
-            if (!text) return '';
-            return text.toString().toLowerCase()
-                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                .replace(/\s+/g, '-').replace(/[^\w\-]+/g, '')
-                .replace(/\-\-+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
-        }
-        const renderer = {
-            heading(text, level, raw) {
-                const slug = slugify(raw);
-                return `<h${level} id="${slug}">${text}</h${level}>`;
-            }
-        };
-        marked.use({ gfm: true, breaks: true, renderer: renderer });
-
-        // Logic Copy & BackToTop nhúng vào file xuất
-        const injectionScript = `
-        <script>
-            function handleCopy(text, btnElement) {
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(text).then(() => showCopiedEffect(btnElement)).catch(() => fallbackCopy(text, btnElement));
-                } else fallbackCopy(text, btnElement);
-            }
-            function fallbackCopy(text, btnElement) {
-                var ta = document.createElement("textarea");
-                ta.value = text; ta.style.position="fixed"; ta.style.left="0"; ta.style.top="0"; ta.style.opacity="0";
-                document.body.appendChild(ta); ta.focus(); ta.select();
-                try { 
-                    var s = document.execCommand('copy'); 
-                    if(s) showCopiedEffect(btnElement); else alert('Trình duyệt chặn copy.');
-                } catch(e){}
-                document.body.removeChild(ta);
-            }
-            function showCopiedEffect(btn) {
-                const old = btn.innerHTML; btn.innerHTML = '<span>✅</span> Đã chép'; btn.style.color='#16a34a'; btn.style.borderColor='#16a34a';
-                setTimeout(() => { btn.innerHTML = old; btn.style.color=''; btn.style.borderColor=''; }, 2000);
-            }
-            window.callCopy = function(btn) {
-                 var pre = btn.parentElement.querySelector('pre');
-                 if(pre) handleCopy(pre.innerText, btn);
-            };
-            document.addEventListener('DOMContentLoaded', () => {
-                const b = document.getElementById('back-to-top');
-                if(b) window.onscroll = function(){ b.style.display = (document.body.scrollTop>300||document.documentElement.scrollTop>300)?'flex':'none'; };
-            });
-        <\/script>`;
-
+        
+        // --- Helpers ---
         function showToast(msg) {
+            const t = document.getElementById('toast');
             document.getElementById('toast-message').innerText = msg;
-            toast.classList.remove('translate-y-32');
-            setTimeout(() => toast.classList.add('translate-y-32'), 3000);
+            t.classList.remove('translate-y-32');
+            setTimeout(() => t.classList.add('translate-y-32'), 3000);
         }
 
-        // Render & Update
+        function slugify(text) {
+            return text ? text.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^\w\-]+/g, '') : '';
+        }
+
+        // --- Extract Title Logic ---
+        function getDocumentTitle() {
+            const raw = editor.value;
+            const match = raw.match(/^#\s+(.+)$/m);
+            return match ? match[1].trim() : 'tai-lieu';
+        }
+
+        function getSafeFilename(ext) {
+            let title = getDocumentTitle();
+            // Loại bỏ các ký tự không hợp lệ trong tên file
+            // Giữ lại tiếng Việt và khoảng trắng, thay thế ký tự đặc biệt bằng _
+            title = title.replace(/[\/\\:*?"<>|]/g, '_');
+            return title + ext;
+        }
+
+        // --- Config Marked ---
+        marked.use({ 
+            gfm: true, breaks: true, 
+            renderer: { heading(t,l,r) { return `<h${l} id="${slugify(r)}">${t}</h${l}>`; } } 
+        });
+
+        // --- Render ---
         function render() {
-            // Lấy giá trị trực tiếp từ DOM để chắc chắn
-            const val = document.getElementById('editor').value; 
-            const html = DOMPurify.sanitize(marked.parse(val));
+            const html = DOMPurify.sanitize(marked.parse(editor.value));
             const div = document.createElement('div'); div.innerHTML = html;
             
-            // Xử lý ảnh preview
+            // Images
             if (embeddedImages.size > 0) {
                 div.querySelectorAll('img').forEach(img => {
                     const src = img.getAttribute('src');
                     if (embeddedImages.has(src)) img.src = embeddedImages.get(src);
                 });
             }
-            // Thêm nút copy preview
+            // Copy Btns
             div.querySelectorAll('pre').forEach(pre => {
-                const wrap = document.createElement('div'); wrap.className = 'code-container';
-                pre.parentNode.insertBefore(wrap, pre); wrap.appendChild(pre);
-                const btn = document.createElement('button'); btn.className = 'copy-btn'; btn.innerHTML = `<span>📋</span> Copy`;
-                btn.onclick = function() { 
-                     if(navigator.clipboard) navigator.clipboard.writeText(pre.innerText).then(()=>{ btn.innerHTML='✅'; setTimeout(()=>btn.innerHTML='<span>📋</span> Copy',2000); });
-                };
-                wrap.appendChild(btn);
+                const w = document.createElement('div'); w.className = 'code-container';
+                pre.parentNode.insertBefore(w, pre); w.appendChild(pre);
+                const b = document.createElement('button'); b.className = 'copy-btn'; b.innerHTML = `<span>📋</span> Copy`;
+                b.onclick = () => { if(navigator.clipboard) navigator.clipboard.writeText(pre.innerText).then(()=>{b.innerHTML='✅';setTimeout(()=>b.innerHTML='<span>📋</span> Copy',2000)}) };
+                w.appendChild(b);
             });
             previewContainer.innerHTML = div.innerHTML;
         }
 
-        // Event Listeners
-        function saveData() {
-            const currentVal = document.getElementById('editor').value;
-            localStorage.setItem(STORAGE_KEY, currentVal);
-            saveStatus.classList.remove('hidden');
-            setTimeout(() => saveStatus.classList.add('hidden'), 1000);
-            render();
-        }
-
-        editorElement.addEventListener('input', saveData);
-        editorElement.addEventListener('change', saveData); // Thêm change để chắc chắn
-
-        function resetStorage() {
-            if(confirm("Xóa và về mặc định?")) {
-                localStorage.removeItem(STORAGE_KEY);
-                editorElement.value = defaultText;
-                render();
-            }
-        }
-        
-        // HÀM COPY RAW MARKDOWN MỚI
-        function copyMarkdownRaw() {
-            const content = document.getElementById('editor').value;
-            if (!content) { showToast('Không có nội dung!'); return; }
+        // --- Generate HTML String (Core logic dùng chung) ---
+        function getFinalHtml() {
+            const raw = document.getElementById('editor').value;
+            if(!raw) return null;
             
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(content)
-                    .then(() => showToast('Đã copy nội dung Markdown!'))
-                    .catch(() => fallbackCopyRaw(content));
-            } else {
-                fallbackCopyRaw(content);
-            }
-        }
-        
-        function fallbackCopyRaw(text) {
-            const ta = document.createElement("textarea");
-            ta.value = text;
-            document.body.appendChild(ta);
-            ta.select();
-            try {
-                const s = document.execCommand('copy');
-                if(s) showToast('Đã copy Markdown (Fallback)!');
-                else showToast('Lỗi copy!');
-            } catch(e) { showToast('Lỗi copy!'); }
-            document.body.removeChild(ta);
-        }
+            const div = document.createElement('div');
+            div.innerHTML = DOMPurify.sanitize(marked.parse(raw));
 
-        imageInput.addEventListener('change', async (e) => {
-            const files = Array.from(e.target.files);
-            if (files.length === 0) return;
-            let count = 0;
-            for (const file of files) {
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    embeddedImages.set(file.name, ev.target.result);
-                    count++;
-                    if (count === files.length) {
-                        document.getElementById('img-btn-text').innerText = `Đã nạp ${embeddedImages.size} ảnh`;
-                        showToast(`Đã nạp ${files.length} ảnh!`);
-                        render();
-                    }
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // HÀM XUẤT HTML QUAN TRỌNG
-        function exportFullHtml() {
-            // QUAN TRỌNG: Lấy dữ liệu tươi nhất trực tiếp từ ô input
-            const freshContent = document.getElementById('editor').value;
-
-            if (!freshContent) { showToast('Nội dung trống!'); return; }
-
-            const rawHtml = DOMPurify.sanitize(marked.parse(freshContent));
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = rawHtml;
-
-            // Xử lý ảnh cho file xuất
+            // Embed Images
             if (embeddedImages.size > 0) {
-                tempDiv.querySelectorAll('img').forEach(img => {
+                div.querySelectorAll('img').forEach(img => {
                     const src = img.getAttribute('src');
                     if (embeddedImages.has(src)) img.src = embeddedImages.get(src);
                 });
             }
 
-            // Gắn nút copy tĩnh
-            tempDiv.querySelectorAll('pre').forEach(pre => {
-                const wrap = document.createElement('div'); wrap.className = 'code-container';
-                pre.parentNode.insertBefore(wrap, pre); wrap.appendChild(pre);
-                const btn = document.createElement('button'); btn.className = 'copy-btn'; btn.innerHTML = `<span>📋</span> Copy`;
-                btn.setAttribute('onclick', 'window.callCopy(this)');
-                wrap.appendChild(btn);
+            // Static Copy Buttons
+            div.querySelectorAll('pre').forEach(pre => {
+                const w = document.createElement('div'); w.className = 'code-container';
+                pre.parentNode.insertBefore(w, pre); w.appendChild(pre);
+                const b = document.createElement('button'); b.className = 'copy-btn'; b.innerHTML = `<span>📋</span> Copy`;
+                b.setAttribute('onclick', 'window.callCopy(this)');
+                w.appendChild(b);
             });
 
-            const content = tempDiv.innerHTML;
+            const docTitle = getDocumentTitle();
             const styles = document.getElementById('content-styles').innerHTML;
+            return `<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>${docTitle}</title><style>body{margin:0;padding:40px;background-color:#f3f4f6;position:relative}html{scroll-behavior:smooth}.container{max-width:900px;margin:0 auto;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);border-radius:8px;overflow:hidden}${styles}</style></head><body><div class="container"><div class="markdown-body">${div.innerHTML}</div></div><button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>${injectionScript}</body></html>`;
+        }
 
-            const finalHtml = `<!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="UTF-8"><title>Tài liệu</title>
-<style>
- body{margin:0;padding:40px;background-color:#f3f4f6;position:relative} html{scroll-behavior:smooth}
- .container{max-width:900px;margin:0 auto;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);border-radius:8px;overflow:hidden}
- ${styles}
-</style>
-</head>
-<body>
- <div class="container"><div class="markdown-body">${content}</div></div>
- <button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
- </button>
- ${injectionScript}
-</body>
-</html>`;
+        // --- Actions ---
+        function copyMarkdownRaw() {
+            const v = editor.value;
+            if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>showToast('Đã copy Markdown'));
+        }
 
-            navigator.clipboard.writeText(finalHtml).then(() => showToast('Đã copy HTML!'))
-            .catch(() => {
-                const ta = document.createElement("textarea"); ta.value = finalHtml; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-                showToast('Đã copy HTML (Fallback)!');
+        function copyHtmlToClipboard() {
+            const h = getFinalHtml();
+            if(h) navigator.clipboard.writeText(h).then(()=>showToast('Đã copy HTML'));
+        }
+
+        function downloadHtmlFile() {
+            const h = getFinalHtml();
+            if(!h) { showToast('Nội dung trống'); return; }
+            const blob = new Blob([h], {type: "text/html"});
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = getSafeFilename(".html");
+            link.click();
+            showToast('Đang tải HTML: ' + link.download);
+        }
+
+        function downloadPdfFile() {
+            const element = document.querySelector('.markdown-body');
+            const filename = getSafeFilename(".pdf");
+
+            const opt = {
+                margin:       10, 
+                filename:     filename,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            const copyBtns = element.querySelectorAll('.copy-btn');
+            copyBtns.forEach(b => b.style.display = 'none');
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                copyBtns.forEach(b => b.style.display = 'flex');
+                showToast('Đang tải PDF: ' + filename);
             });
         }
 
-        // Init
+        function resetStorage() {
+            if(confirm("Xóa nội dung hiện tại và khôi phục MẪU ĐẦY ĐỦ?")) { 
+                localStorage.removeItem(STORAGE_KEY); 
+                editor.value = defaultText; 
+                render(); 
+                showToast("Đã khôi phục mẫu!");
+            }
+        }
+
+        // --- Init & Events ---
         const saved = localStorage.getItem(STORAGE_KEY);
-        editorElement.value = saved ? saved : defaultText;
+        editor.value = saved || defaultText;
         render();
 
-        editorElement.addEventListener('scroll', () => {
-            const p = editorElement.scrollTop / (editorElement.scrollHeight - editorElement.clientHeight);
+        editor.addEventListener('input', () => { render(); localStorage.setItem(STORAGE_KEY, editor.value); });
+        
+        document.getElementById('imageInput').addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            if(!files.length) return;
+            let c = 0;
+            for(const f of files) {
+                const r = new FileReader();
+                r.onload = (ev) => { 
+                    embeddedImages.set(f.name, ev.target.result); c++;
+                    if(c===files.length) { 
+                        document.getElementById('img-btn-text').innerText = `${c} Ảnh`; 
+                        showToast(`Đã nạp ${c} ảnh`); 
+                        render(); 
+                    }
+                };
+                r.readAsDataURL(f);
+            }
+        });
+
+        editor.addEventListener('scroll', () => {
+            const p = editor.scrollTop / (editor.scrollHeight - editor.clientHeight);
             const ph = previewContainer.parentNode.scrollHeight - previewContainer.parentNode.clientHeight;
             previewContainer.parentNode.scrollTop = p * ph;
         });
