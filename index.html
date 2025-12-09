@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Markdown Editor</title>
+    <title>MD Pro V9 - Zen Mode</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Marked.js 12.0.2 -->
@@ -14,7 +14,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style id="content-styles">
-        /* --- Styles --- */
+        /* --- Styles Giữ Nguyên --- */
         .markdown-body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
             font-size: 16px; line-height: 1.6; word-wrap: break-word; color: #24292f; background-color: #fff; padding: 20px;
@@ -28,21 +28,33 @@
         .markdown-body ul { list-style-type: disc; }
         .markdown-body ol { list-style-type: decimal; }
         .markdown-body blockquote { padding: 0 1em; color: #57606a; border-left: 0.25em solid #d0d7de; margin-bottom: 16px; }
-        
         .markdown-body code { padding: 0.2em 0.4em; margin: 0; font-size: 85%; background-color: rgba(175, 184, 193, 0.2); border-radius: 6px; font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace; }
         .code-container { position: relative; margin-bottom: 16px; background-color: #f6f8fa; border-radius: 6px; border: 1px solid #d0d7de; page-break-inside: avoid; }
         .code-container pre { padding: 16px; overflow: auto; margin: 0; border-radius: 6px; padding-top: 40px; }
         .code-container pre code { background-color: transparent; padding: 0; white-space: pre; }
-
         .copy-btn { position: absolute; top: 5px; right: 5px; padding: 4px 10px; font-size: 12px; color: #24292f; background-color: #f3f4f6; border: 1px solid #d0d7de; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 600; user-select: none; z-index: 10; box-shadow: 0 1px 2px rgba(0,0,0,0.05); line-height: 1; }
         .copy-btn:hover { background-color: #fff; color: #0969da; border-color: #0969da; }
-
         .markdown-body img { max-width: 100%; box-sizing: border-box; background-color: #fff; border: 1px solid #d0d7de; border-radius: 6px; page-break-inside: avoid; }
         .markdown-body table { border-spacing: 0; border-collapse: collapse; margin-bottom: 16px; width: 100%; }
         .markdown-body table th, .markdown-body table td { padding: 6px 13px; border: 1px solid #d0d7de; }
         .markdown-body table tr:nth-child(2n) { background-color: #f6f8fa; }
-
         #back-to-top { position: fixed; bottom: 30px; right: 30px; background-color: #2563eb; color: white; width: 50px; height: 50px; border-radius: 50%; display: none; justify-content: center; align-items: center; cursor: pointer; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.2); z-index: 9999; }
+        
+        /* Custom Select Style */
+        .dark-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        /* Transition classes for smooth toggle */
+        .panel-transition {
+            transition: width 0.3s ease-in-out, opacity 0.2s ease-in-out;
+        }
     </style>
 </head>
 <body class="bg-gray-100 h-screen flex flex-col overflow-hidden">
@@ -50,56 +62,71 @@
     <!-- Header -->
     <header class="bg-gray-900 text-white h-16 flex justify-between items-center px-4 shadow-md shrink-0 z-10 gap-2">
         <div class="flex items-center gap-2 min-w-fit">
-            <span class="font-bold text-lg tracking-wide hidden md:inline">MD Pro V7</span>
+            <span class="font-bold text-lg tracking-wide hidden md:inline">MD Pro V9</span>
         </div>
         
-        <div class="flex gap-2 items-center overflow-x-auto">
-            <button onclick="resetStorage()" class="text-xs text-gray-400 hover:text-white underline px-1 whitespace-nowrap">Reset</button>
+        <div class="flex gap-2 items-center overflow-x-auto w-full justify-end">
+            
+            <!-- KHU VỰC QUẢN LÝ FILE -->
+            <div class="flex items-center gap-1 bg-gray-800 p-1 rounded border border-gray-700 mr-2">
+                <button onclick="createNewFile()" title="Tạo mới (Làm sạch)" class="p-2 hover:bg-gray-700 rounded text-gray-300 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>
+                </button>
 
-            <!-- Nút Copy MD -->
-            <button onclick="copyMarkdownRaw()" title="Copy nội dung Markdown" class="p-2 bg-gray-700 hover:bg-gray-600 rounded border border-gray-600">
+                <select id="fileHistorySelect" onchange="loadSelectedFile()" class="dark-select bg-gray-900 text-white text-sm border border-gray-600 rounded px-3 py-1.5 focus:outline-none focus:border-blue-500 max-w-[150px] truncate">
+                    <option value="">-- Lịch sử --</option>
+                </select>
+
+                <button onclick="saveCurrentFile()" title="Lưu File" class="p-2 hover:bg-gray-700 rounded text-green-400 hover:text-green-300 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                </button>
+
+                <button onclick="deleteCurrentFile()" title="Xóa File này" class="p-2 hover:bg-gray-700 rounded text-red-400 hover:text-red-300 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+            </div>
+
+            <!-- NÚT TOGGLE PREVIEW (MỚI) -->
+            <button onclick="togglePreview()" title="Ẩn/Hiện Preview" class="p-2 bg-purple-700 hover:bg-purple-600 rounded border border-purple-600 text-white transition-colors mr-1">
+                <svg id="icon-eye-open" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg id="icon-eye-closed" class="hidden" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+
+            <!-- Copy MD -->
+            <button onclick="copyMarkdownRaw()" title="Copy Markdown" class="p-2 bg-gray-700 hover:bg-gray-600 rounded border border-gray-600 hidden sm:block">
                 <span class="text-xs font-bold">MD</span>
             </button>
 
             <!-- Nạp ảnh -->
             <input type="file" id="imageInput" multiple accept="image/*" class="hidden">
-            <button onclick="document.getElementById('imageInput').click()" title="Nạp ảnh local" class="flex items-center gap-1 bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-1.5 rounded text-sm font-medium border border-gray-600 whitespace-nowrap">
+            <button onclick="document.getElementById('imageInput').click()" title="Nạp ảnh" class="flex items-center gap-1 bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-1.5 rounded text-sm font-medium border border-gray-600 whitespace-nowrap">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                <span id="img-btn-text">Ảnh</span>
             </button>
 
-            <!-- Divider -->
-            <div class="w-px h-6 bg-gray-600 mx-1"></div>
+            <div class="w-px h-6 bg-gray-600 mx-1 hidden sm:block"></div>
 
-            <!-- Copy HTML Clipboard -->
-            <button onclick="copyHtmlToClipboard()" title="Copy HTML vào Clipboard" class="flex items-center gap-1 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-sm font-medium whitespace-nowrap">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                <span>Copy HTML</span>
+            <!-- Download Group -->
+            <button onclick="downloadHtmlFile()" title="Tải HTML" class="flex items-center gap-1 bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded text-sm font-medium whitespace-nowrap">
+                <span>HTML</span>
             </button>
-
-            <!-- Download HTML -->
-            <button onclick="downloadHtmlFile()" title="Tải file .html" class="flex items-center gap-1 bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded text-sm font-medium whitespace-nowrap">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                <span>.html</span>
-            </button>
-
-            <!-- Download PDF -->
-            <button onclick="downloadPdfFile()" title="Tải file .pdf" class="flex items-center gap-1 bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded text-sm font-medium whitespace-nowrap">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>
-                <span>.pdf</span>
+            <button onclick="downloadPdfFile()" title="Tải PDF" class="flex items-center gap-1 bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded text-sm font-medium whitespace-nowrap">
+                <span>PDF</span>
             </button>
         </div>
     </header>
 
     <main class="flex-1 flex flex-row overflow-hidden">
-        <div class="w-1/2 flex flex-col border-r border-gray-300">
-            <div class="bg-gray-100 px-4 py-2 text-xs font-bold uppercase border-b border-gray-300 flex justify-between">
-                <span>Markdown Input</span>
-                <span id="save-status" class="text-green-600 font-normal hidden">Đã lưu</span>
+        <!-- Editor Pane -->
+        <div id="editor-pane" class="w-1/2 flex flex-col border-r border-gray-300 panel-transition">
+            <div class="bg-gray-100 px-4 py-2 text-xs font-bold uppercase border-b border-gray-300 flex justify-between items-center">
+                <span id="currentFileName">Bản nháp (Chưa lưu)</span>
+                <span id="save-status" class="text-green-600 font-normal hidden text-[10px]">Đã lưu nháp</span>
             </div>
-            <textarea id="editor" class="flex-1 w-full p-6 resize-none outline-none font-mono text-gray-800 text-sm leading-relaxed bg-gray-50 focus:bg-white transition-colors" spellcheck="false"></textarea>
+            <textarea id="editor" class="flex-1 w-full p-6 resize-none outline-none font-mono text-gray-800 text-sm leading-relaxed bg-gray-50 focus:bg-white transition-colors" spellcheck="false" placeholder="Nhập nội dung vào đây..."></textarea>
         </div>
-        <div class="w-1/2 flex flex-col bg-white">
+        
+        <!-- Preview Pane -->
+        <div id="preview-pane" class="w-1/2 flex flex-col bg-white panel-transition">
             <div class="bg-gray-100 px-4 py-2 text-xs font-bold uppercase border-b border-gray-300">Preview</div>
             <div id="preview" class="flex-1 w-full p-0 overflow-y-auto"><div class="markdown-body h-full"></div></div>
         </div>
@@ -123,8 +150,14 @@
     </script>
 
     <script>
-        const STORAGE_KEY = 'md_editor_v7_full_store';
+        // --- CONSTANTS ---
+        const AUTOSAVE_KEY = 'md_pro_autosave_draft'; 
+        const FILE_PREFIX = 'md_save_'; 
+
+        // NỘI DUNG MẪU ĐẦY ĐỦ TÍNH NĂNG
         const defaultText = `# Hướng Dẫn & Mẫu Markdown Toàn Diện
+
+> **Mẹo:** Bấm nút hình "Con Mắt" (👁️) trên thanh công cụ để ẩn/hiện cửa sổ Preview!
 
 Chào mừng! Đây là file mẫu dùng để kiểm tra khả năng hiển thị của trình soạn thảo.
 Dưới đây là mục lục (Bạn có thể click để nhảy đến từng phần nhờ tính năng tự tạo ID):
@@ -292,12 +325,17 @@ Nếu muốn viết dấu sao mà không bị in đậm, hãy dùng dấu gạch
 
         const editor = document.getElementById('editor');
         const previewContainer = document.querySelector('#preview .markdown-body');
+        const fileSelect = document.getElementById('fileHistorySelect');
+        const currentFileNameDisplay = document.getElementById('currentFileName');
         const embeddedImages = new Map();
         
+        let currentFileKey = null; 
+
         // --- Helpers ---
-        function showToast(msg) {
+        function showToast(msg, type='success') {
             const t = document.getElementById('toast');
             document.getElementById('toast-message').innerText = msg;
+            document.getElementById('toast-icon').innerText = type === 'error' ? '❌' : '✅';
             t.classList.remove('translate-y-32');
             setTimeout(() => t.classList.add('translate-y-32'), 3000);
         }
@@ -306,40 +344,21 @@ Nếu muốn viết dấu sao mà không bị in đậm, hãy dùng dấu gạch
             return text ? text.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^\w\-]+/g, '') : '';
         }
 
-        // --- Extract Title Logic ---
-        function getDocumentTitle() {
-            const raw = editor.value;
-            const match = raw.match(/^#\s+(.+)$/m);
-            return match ? match[1].trim() : 'tai-lieu';
-        }
-
-        function getSafeFilename(ext) {
-            let title = getDocumentTitle();
-            // Loại bỏ các ký tự không hợp lệ trong tên file
-            // Giữ lại tiếng Việt và khoảng trắng, thay thế ký tự đặc biệt bằng _
-            title = title.replace(/[\/\\:*?"<>|]/g, '_');
-            return title + ext;
-        }
-
-        // --- Config Marked ---
         marked.use({ 
             gfm: true, breaks: true, 
             renderer: { heading(t,l,r) { return `<h${l} id="${slugify(r)}">${t}</h${l}>`; } } 
         });
 
-        // --- Render ---
         function render() {
             const html = DOMPurify.sanitize(marked.parse(editor.value));
             const div = document.createElement('div'); div.innerHTML = html;
             
-            // Images
             if (embeddedImages.size > 0) {
                 div.querySelectorAll('img').forEach(img => {
                     const src = img.getAttribute('src');
                     if (embeddedImages.has(src)) img.src = embeddedImages.get(src);
                 });
             }
-            // Copy Btns
             div.querySelectorAll('pre').forEach(pre => {
                 const w = document.createElement('div'); w.className = 'code-container';
                 pre.parentNode.insertBefore(w, pre); w.appendChild(pre);
@@ -350,23 +369,144 @@ Nếu muốn viết dấu sao mà không bị in đậm, hãy dùng dấu gạch
             previewContainer.innerHTML = div.innerHTML;
         }
 
-        // --- Generate HTML String (Core logic dùng chung) ---
+        // --- TOGGLE PREVIEW FUNCTION ---
+        let isPreviewVisible = true;
+        function togglePreview() {
+            const editorPane = document.getElementById('editor-pane');
+            const previewPane = document.getElementById('preview-pane');
+            const iconOpen = document.getElementById('icon-eye-open');
+            const iconClosed = document.getElementById('icon-eye-closed');
+
+            isPreviewVisible = !isPreviewVisible;
+
+            if (isPreviewVisible) {
+                // HIỆN PREVIEW
+                editorPane.classList.remove('w-full');
+                editorPane.classList.add('w-1/2', 'border-r');
+                
+                previewPane.classList.remove('hidden');
+                setTimeout(() => { // Timeout nhỏ để transition hoạt động tốt với display:none
+                    previewPane.classList.add('w-1/2', 'flex');
+                    previewPane.style.opacity = '1';
+                }, 10);
+
+                iconOpen.classList.remove('hidden');
+                iconClosed.classList.add('hidden');
+            } else {
+                // ẨN PREVIEW
+                previewPane.style.opacity = '0'; // Fade out trước
+                
+                editorPane.classList.remove('w-1/2', 'border-r');
+                editorPane.classList.add('w-full');
+
+                // Đợi transition xong mới ẩn hẳn DOM
+                setTimeout(() => {
+                    previewPane.classList.remove('w-1/2', 'flex');
+                    previewPane.classList.add('hidden');
+                }, 300); // 300ms khớp với css transition
+
+                iconOpen.classList.add('hidden');
+                iconClosed.classList.remove('hidden');
+            }
+        }
+
+        // --- FILE MANAGER LOGIC ---
+        function refreshFileDropdown() {
+            fileSelect.innerHTML = '<option value="">-- Lịch sử file --</option>';
+            const keys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith(FILE_PREFIX)) {
+                    keys.push(key);
+                }
+            }
+            keys.sort();
+            keys.forEach(key => {
+                const name = key.replace(FILE_PREFIX, '');
+                const option = document.createElement('option');
+                option.value = key;
+                option.innerText = name;
+                if (key === currentFileKey) option.selected = true;
+                fileSelect.appendChild(option);
+            });
+        }
+
+        function createNewFile() {
+            if(confirm("Tạo bản thảo mới?")) {
+                currentFileKey = null;
+                editor.value = "";
+                currentFileNameDisplay.innerText = "Bản nháp mới (Chưa lưu)";
+                fileSelect.value = ""; 
+                render();
+                localStorage.removeItem(AUTOSAVE_KEY); 
+                showToast("Đã tạo mới");
+            }
+        }
+
+        function saveCurrentFile() {
+            let saveName = "";
+            if (currentFileKey) {
+                const oldName = currentFileKey.replace(FILE_PREFIX, '');
+                saveName = prompt("Nhập tên để lưu:", oldName);
+            } else {
+                const firstLine = editor.value.split('\n')[0].replace(/#/g, '').trim();
+                saveName = prompt("Đặt tên cho file này:", firstLine || "New Project");
+            }
+
+            if (saveName) {
+                const newKey = FILE_PREFIX + saveName;
+                localStorage.setItem(newKey, editor.value);
+                currentFileKey = newKey;
+                currentFileNameDisplay.innerText = saveName;
+                refreshFileDropdown();
+                showToast(`Đã lưu: ${saveName}`);
+            }
+        }
+
+        function loadSelectedFile() {
+            const key = fileSelect.value;
+            if (key) {
+                const content = localStorage.getItem(key);
+                if (content !== null) {
+                    editor.value = content;
+                    currentFileKey = key;
+                    currentFileNameDisplay.innerText = key.replace(FILE_PREFIX, '');
+                    render();
+                    showToast("Đã tải file");
+                }
+            }
+        }
+
+        function deleteCurrentFile() {
+            if (!currentFileKey) { showToast("Chưa có file để xóa!", "error"); return; }
+            if (confirm(`Xóa file "${currentFileKey.replace(FILE_PREFIX, '')}"?`)) {
+                localStorage.removeItem(currentFileKey);
+                currentFileKey = null;
+                currentFileNameDisplay.innerText = "Bản nháp (File đã xóa)";
+                refreshFileDropdown();
+                showToast("Đã xóa file");
+            }
+        }
+
+        function autoSaveDraft() {
+            localStorage.setItem(AUTOSAVE_KEY, editor.value);
+            if (currentFileKey) localStorage.setItem(currentFileKey, editor.value);
+            const status = document.getElementById('save-status');
+            status.classList.remove('hidden');
+            setTimeout(() => status.classList.add('hidden'), 1000);
+        }
+
         function getFinalHtml() {
-            const raw = document.getElementById('editor').value;
+            const raw = editor.value;
             if(!raw) return null;
-            
             const div = document.createElement('div');
             div.innerHTML = DOMPurify.sanitize(marked.parse(raw));
-
-            // Embed Images
             if (embeddedImages.size > 0) {
                 div.querySelectorAll('img').forEach(img => {
                     const src = img.getAttribute('src');
                     if (embeddedImages.has(src)) img.src = embeddedImages.get(src);
                 });
             }
-
-            // Static Copy Buttons
             div.querySelectorAll('pre').forEach(pre => {
                 const w = document.createElement('div'); w.className = 'code-container';
                 pre.parentNode.insertBefore(w, pre); w.appendChild(pre);
@@ -374,70 +514,39 @@ Nếu muốn viết dấu sao mà không bị in đậm, hãy dùng dấu gạch
                 b.setAttribute('onclick', 'window.callCopy(this)');
                 w.appendChild(b);
             });
-
-            const docTitle = getDocumentTitle();
             const styles = document.getElementById('content-styles').innerHTML;
-            return `<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>${docTitle}</title><style>body{margin:0;padding:40px;background-color:#f3f4f6;position:relative}html{scroll-behavior:smooth}.container{max-width:900px;margin:0 auto;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);border-radius:8px;overflow:hidden}${styles}</style></head><body><div class="container"><div class="markdown-body">${div.innerHTML}</div></div><button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>${injectionScript}</body></html>`;
+            const title = currentFileNameDisplay.innerText;
+            return `<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>${title}</title><style>body{margin:0;padding:40px;background-color:#f3f4f6;position:relative}html{scroll-behavior:smooth}.container{max-width:900px;margin:0 auto;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);border-radius:8px;overflow:hidden}${styles}</style></head><body><div class="container"><div class="markdown-body">${div.innerHTML}</div></div><button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>${injectionScript}</body></html>`;
         }
 
-        // --- Actions ---
         function copyMarkdownRaw() {
-            const v = editor.value;
-            if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>showToast('Đã copy Markdown'));
-        }
-
-        function copyHtmlToClipboard() {
-            const h = getFinalHtml();
-            if(h) navigator.clipboard.writeText(h).then(()=>showToast('Đã copy HTML'));
+            if(navigator.clipboard) navigator.clipboard.writeText(editor.value).then(()=>showToast('Đã copy MD'));
         }
 
         function downloadHtmlFile() {
             const h = getFinalHtml();
-            if(!h) { showToast('Nội dung trống'); return; }
+            if(!h) { showToast('Trống'); return; }
             const blob = new Blob([h], {type: "text/html"});
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = getSafeFilename(".html");
+            link.download = (currentFileKey ? currentFileKey.replace(FILE_PREFIX, '') : "draft") + ".html";
             link.click();
-            showToast('Đang tải HTML: ' + link.download);
         }
 
         function downloadPdfFile() {
             const element = document.querySelector('.markdown-body');
-            const filename = getSafeFilename(".pdf");
-
-            const opt = {
-                margin:       10, 
-                filename:     filename,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
-            const copyBtns = element.querySelectorAll('.copy-btn');
-            copyBtns.forEach(b => b.style.display = 'none');
-
-            html2pdf().set(opt).from(element).save().then(() => {
-                copyBtns.forEach(b => b.style.display = 'flex');
-                showToast('Đang tải PDF: ' + filename);
-            });
+            const fname = (currentFileKey ? currentFileKey.replace(FILE_PREFIX, '') : "draft") + ".pdf";
+            const opt = { margin: 10, filename: fname, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+            const btns = element.querySelectorAll('.copy-btn'); btns.forEach(b => b.style.display = 'none');
+            html2pdf().set(opt).from(element).save().then(() => { btns.forEach(b => b.style.display = 'flex'); showToast('Đang tải PDF...'); });
         }
 
-        function resetStorage() {
-            if(confirm("Xóa nội dung hiện tại và khôi phục MẪU ĐẦY ĐỦ?")) { 
-                localStorage.removeItem(STORAGE_KEY); 
-                editor.value = defaultText; 
-                render(); 
-                showToast("Đã khôi phục mẫu!");
-            }
-        }
-
-        // --- Init & Events ---
-        const saved = localStorage.getItem(STORAGE_KEY);
-        editor.value = saved || defaultText;
+        refreshFileDropdown(); 
+        const draftContent = localStorage.getItem(AUTOSAVE_KEY);
+        editor.value = draftContent || defaultText;
         render();
 
-        editor.addEventListener('input', () => { render(); localStorage.setItem(STORAGE_KEY, editor.value); });
+        editor.addEventListener('input', () => { render(); autoSaveDraft(); });
         
         document.getElementById('imageInput').addEventListener('change', (e) => {
             const files = Array.from(e.target.files);
@@ -445,14 +554,7 @@ Nếu muốn viết dấu sao mà không bị in đậm, hãy dùng dấu gạch
             let c = 0;
             for(const f of files) {
                 const r = new FileReader();
-                r.onload = (ev) => { 
-                    embeddedImages.set(f.name, ev.target.result); c++;
-                    if(c===files.length) { 
-                        document.getElementById('img-btn-text').innerText = `${c} Ảnh`; 
-                        showToast(`Đã nạp ${c} ảnh`); 
-                        render(); 
-                    }
-                };
+                r.onload = (ev) => { embeddedImages.set(f.name, ev.target.result); c++; if(c===files.length) render(); };
                 r.readAsDataURL(f);
             }
         });
